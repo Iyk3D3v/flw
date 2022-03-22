@@ -21,7 +21,7 @@ app.use('/api', feeRoute);
 
 //base api call
 app.get('/', async (req, res) => {
-    res.send("Lannister Pay API, Home way")
+    res.send("Lannister Pay API")
     //const timeout = require("connect-timeout")
 })
 

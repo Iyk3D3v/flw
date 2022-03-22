@@ -2,6 +2,11 @@ const router = require('express').Router();
 const Fee = require('../models/fee-model');
 
 
+//for base api
+router.get("/", async (res, req)=>{
+    res.send("Lannister Pay API")
+})
+
 //to accept fee config
 router.post("/fees", async (req,res)=>{
     try{
