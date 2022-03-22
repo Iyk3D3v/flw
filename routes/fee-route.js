@@ -3,8 +3,8 @@ const Fee = require('../models/fee-model');
 
 
 //for base api
-router.get("/", async (res, req)=>{
-    res.send("Lannister Pay API")
+router.get("/", async (req, res)=>{
+   return res.send("Lannister Pay API")
 })
 
 //to accept fee config
