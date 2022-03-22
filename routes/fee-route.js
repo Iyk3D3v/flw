@@ -106,7 +106,7 @@ router.post("/compute-transaction-fee", async (req,res)=>{
 
                     return res.status(200).send({
                         AppliedFeeID:payModel.feeId,
-                        AppliedFeeValue :total,
+                        AppliedFeeValue :parseFloat(total),
                         ChargeAmount : chrgamt,
                         SettlementAmount : (chrgamt-amt)
                     });
@@ -121,7 +121,7 @@ router.post("/compute-transaction-fee", async (req,res)=>{
 
                     return res.status(200).send({
                         AppliedFeeID:payModel.feeId,
-                        AppliedFeeValue :amt,
+                        AppliedFeeValue :Number(amt.toFixed(2)),
                         ChargeAmount : chrgamt,
                         SettlementAmount : (chrgamt-amt)
                     });
@@ -180,7 +180,7 @@ router.post("/compute-transaction-fee", async (req,res)=>{
 
                     return res.status(200).send({
                         AppliedFeeID:payModel2.feeId,
-                        AppliedFeeValue :amt,
+                        AppliedFeeValue :Number(amt.toFixed(2)),
                         ChargeAmount : chrgamt,
                         SettlementAmount : (chrgamt-amt)
                     });
@@ -222,7 +222,7 @@ router.post("/compute-transaction-fee", async (req,res)=>{
 
                     return res.status(200).send({
                         AppliedFeeID:payModel5.feeId,
-                        AppliedFeeValue :total,
+                        AppliedFeeValue :parseFloat(total),
                         ChargeAmount : chrgamt,
                         SettlementAmount : (chrgamt-amt)
                     });
@@ -237,7 +237,7 @@ router.post("/compute-transaction-fee", async (req,res)=>{
 
                     return res.status(200).send({
                         AppliedFeeID:payModel5.feeId,
-                        AppliedFeeValue :amt,
+                        AppliedFeeValue :Number(amt.toFixed(2)),
                         ChargeAmount : chrgamt,
                         SettlementAmount : (chrgamt-amt)
                     });
@@ -304,7 +304,7 @@ router.post("/compute-transaction-fee", async (req,res)=>{
 
                     return res.status(200).send({
                         AppliedFeeID:payModel1.feeId,
-                        AppliedFeeValue :amt,
+                        AppliedFeeValue :Number(amt.toFixed(2)),
                         ChargeAmount : chrgamt,
                         SettlementAmount : (chrgamt-amt)
                     });
@@ -372,7 +372,7 @@ router.post("/compute-transaction-fee", async (req,res)=>{
 
                     return res.status(200).send({
                         AppliedFeeID:payModel4.feeId,
-                        AppliedFeeValue :amt,
+                        AppliedFeeValue :Number(amt.toFixed(2)),
                         ChargeAmount : chrgamt,
                         SettlementAmount : (chrgamt-amt)
                     });
@@ -439,7 +439,7 @@ router.post("/compute-transaction-fee", async (req,res)=>{
 
                     return res.status(200).send({
                         AppliedFeeID:payModel6.feeId,
-                        AppliedFeeValue :amt,
+                        AppliedFeeValue :Number(amt.toFixed(2)),
                         ChargeAmount : chrgamt,
                         SettlementAmount : (chrgamt-amt)
                     });
@@ -447,12 +447,78 @@ router.post("/compute-transaction-fee", async (req,res)=>{
                 }
             }
 
+             //to check if entity type is * and locale is * and alll *
+             let payModel7 = fees.find(p=>p.feeEntity == "*" && p.feeLocale == "*" && p.entityProp == '*'  )
+             if(payModel7 != null || payModel7 != undefined)
+             {
+                 console.log(`here1`,payModel7)
+                 if(payModel7.feeType == "FLAT")
+                 {
+                     //do
+                     console.log(`here`,payModel7.feeType)
+                     let amt = parseFloat(payModel7.feeValue);
+ 
+                     let chrgamt = req.body.Customer.BearsFee == true ? (parseFloat(req.body.Amount) + amt ) : (parseFloat(req.body.Amount));
+ 
+                     return res.status(200).send({
+                         AppliedFeeID:payModel7.feeId,
+                         AppliedFeeValue :amt,
+                         ChargeAmount : chrgamt,
+                         SettlementAmount : (chrgamt-amt)
+                     });
+                 }
+ 
+                 else if(payModel7.feeType == "FLAT_PERC")
+                 {
+                     try{
+                     console.log(`here`,payModel7.feeType)
+ 
+                     let amt = parseFloat(payModel7.feeValue.split(":")[0]);
+ 
+                     let amt1 = parseFloat(payModel7.feeValue.split(":")[1]);
+ 
+                     let total = amt +((amt1/100)*parseFloat(req.body.Amount))
+ 
+                     let chrgamt = req.body.Customer.BearsFee == true ? (parseFloat(req.body.Amount) + total ) : (parseFloat(req.body.Amount));
+ 
+                     return res.status(200).send({
+                         AppliedFeeID:payModel7.feeId,
+                         AppliedFeeValue : total.toFixed(2),
+                         ChargeAmount : chrgamt,
+                         SettlementAmount : (chrgamt-total)
+                     });
+ 
+                     }
+                     catch(err)
+                     {
+                         return res.status(400).send({error:err.message})
+                     }
+                     
+                 }
+ 
+                 else if(payModel7.feeType === 'PERC')
+                 {
+                     console.log(`here`,payModel7.feeType)
+                     let amt = (parseFloat(payModel7.feeValue)/100)*(parseFloat(req.body.Amount));
+ 
+                     let chrgamt = req.body.Customer.BearsFee == true ? (parseFloat(req.body.Amount) + amt ) : (parseFloat(req.body.Amount));
+ 
+                     return res.status(200).send({
+                         AppliedFeeID:payModel7.feeId,
+                         AppliedFeeValue :Number(amt.toFixed(2)),
+                         ChargeAmount : chrgamt,
+                         SettlementAmount : (chrgamt-amt)
+                     });
+ 
+                 }
+             }
+
         //if all fsiles to match, return this
              return res.status(400).send({Error:"No fee configuration matches this payment"});
 
         }
 
-        // then for debit card
+        // then for debit card*************************************************
         if(req.body.PaymentEntity.Type == "DEBIT-CARD"){
             //get a list of fee config for credit-card and the same entity prop type //checking if entity prop is equals to brand 
             let payModel = fees.find(p=>p.feeEntity == req.body.PaymentEntity.Type && p.entityProp == req.body.PaymentEntity.Brand && p.feeLocale == local);
@@ -504,7 +570,7 @@ router.post("/compute-transaction-fee", async (req,res)=>{
 
                     return res.status(200).send({
                         AppliedFeeID:payModel.feeId,
-                        AppliedFeeValue :amt,
+                        AppliedFeeValue :Number(amt.toFixed(2)),
                         ChargeAmount : chrgamt,
                         SettlementAmount : (chrgamt-amt)
                     });
@@ -563,7 +629,7 @@ router.post("/compute-transaction-fee", async (req,res)=>{
 
                     return res.status(200).send({
                         AppliedFeeID:payModel2.feeId,
-                        AppliedFeeValue :amt,
+                        AppliedFeeValue :Number(amt.toFixed(2)),
                         ChargeAmount : chrgamt,
                         SettlementAmount : (chrgamt-amt)
                     });
@@ -620,7 +686,7 @@ router.post("/compute-transaction-fee", async (req,res)=>{
 
                     return res.status(200).send({
                         AppliedFeeID:payModel5.feeId,
-                        AppliedFeeValue :amt,
+                        AppliedFeeValue :Number(amt.toFixed(2)),
                         ChargeAmount : chrgamt,
                         SettlementAmount : (chrgamt-amt)
                     });
@@ -687,7 +753,7 @@ router.post("/compute-transaction-fee", async (req,res)=>{
 
                     return res.status(200).send({
                         AppliedFeeID:payModel1.feeId,
-                        AppliedFeeValue :amt,
+                        AppliedFeeValue :Number(amt.toFixed(2)),
                         ChargeAmount : chrgamt,
                         SettlementAmount : (chrgamt-amt)
                     });
@@ -755,7 +821,7 @@ router.post("/compute-transaction-fee", async (req,res)=>{
 
                     return res.status(200).send({
                         AppliedFeeID:payModel4.feeId,
-                        AppliedFeeValue :amt,
+                        AppliedFeeValue :Number(amt.toFixed(2)),
                         ChargeAmount : chrgamt,
                         SettlementAmount : (chrgamt-amt)
                     });
@@ -822,7 +888,7 @@ router.post("/compute-transaction-fee", async (req,res)=>{
 
                     return res.status(200).send({
                         AppliedFeeID:payModel6.feeId,
-                        AppliedFeeValue :amt,
+                        AppliedFeeValue :Number(amt.toFixed(2)),
                         ChargeAmount : chrgamt,
                         SettlementAmount : (chrgamt-amt)
                     });
@@ -830,9 +896,77 @@ router.post("/compute-transaction-fee", async (req,res)=>{
                 }
             }
 
+   //to check if entity type is * and locale is * and alll *
+   let payModel7 = fees.find(p=>p.feeEntity == "*" && p.feeLocale == "*" && p.entityProp == '*'  )
+   if(payModel7 != null || payModel7 != undefined)
+   {
+       console.log(`here1`,payModel7)
+       if(payModel7.feeType == "FLAT")
+       {
+           //do
+           console.log(`here`,payModel7.feeType)
+           let amt = parseFloat(payModel7.feeValue);
+
+           let chrgamt = req.body.Customer.BearsFee == true ? (parseFloat(req.body.Amount) + amt ) : (parseFloat(req.body.Amount));
+
+           return res.status(200).send({
+               AppliedFeeID:payModel7.feeId,
+               AppliedFeeValue :amt,
+               ChargeAmount : chrgamt,
+               SettlementAmount : (chrgamt-amt)
+           });
+       }
+
+       else if(payModel7.feeType == "FLAT_PERC")
+       {
+           try{
+           console.log(`here`,payModel7.feeType)
+
+           let amt = parseFloat(payModel7.feeValue.split(":")[0]);
+
+           let amt1 = parseFloat(payModel7.feeValue.split(":")[1]);
+
+           let total = amt +((amt1/100)*parseFloat(req.body.Amount))
+
+           let chrgamt = req.body.Customer.BearsFee == true ? (parseFloat(req.body.Amount) + total ) : (parseFloat(req.body.Amount));
+
+           return res.status(200).send({
+               AppliedFeeID:payModel7.feeId,
+               AppliedFeeValue : total.toFixed(2),
+               ChargeAmount : chrgamt,
+               SettlementAmount : (chrgamt-total)
+           });
+
+           }
+           catch(err)
+           {
+               return res.status(400).send({error:err.message})
+           }
+           
+       }
+
+       else if(payModel7.feeType === 'PERC')
+       {
+           console.log(`here`,payModel7.feeType)
+           let amt = (parseFloat(payModel7.feeValue)/100)*(parseFloat(req.body.Amount));
+
+           let chrgamt = req.body.Customer.BearsFee == true ? (parseFloat(req.body.Amount) + amt ) : (parseFloat(req.body.Amount));
+
+           return res.status(200).send({
+               AppliedFeeID:payModel7.feeId,
+               AppliedFeeValue :Number(amt.toFixed(2)),
+               ChargeAmount : chrgamt,
+               SettlementAmount : (chrgamt-amt)
+           });
+
+       }
+   }
+
             return res.status(400).send({Error:"No fee configuration matches this payment"});
 
         }
+
+        //then for bank acct *********************************************************
         if(req.body.PaymentEntity.Type == "BANK-ACCOUNT"){
 
             //get a list of fee config for credit-card and the same entity prop type //checking if entity prop is equals to brand 
@@ -885,7 +1019,7 @@ router.post("/compute-transaction-fee", async (req,res)=>{
 
                     return res.status(200).send({
                         AppliedFeeID:payModel.feeId,
-                        AppliedFeeValue :amt,
+                        AppliedFeeValue :Number(amt.toFixed(2)),
                         ChargeAmount : chrgamt,
                         SettlementAmount : (chrgamt-amt)
                     });
@@ -944,7 +1078,7 @@ router.post("/compute-transaction-fee", async (req,res)=>{
 
                     return res.status(200).send({
                         AppliedFeeID:payModel2.feeId,
-                        AppliedFeeValue :amt,
+                        AppliedFeeValue :Number(amt.toFixed(2)),
                         ChargeAmount : chrgamt,
                         SettlementAmount : (chrgamt-amt)
                     });
@@ -1001,7 +1135,7 @@ router.post("/compute-transaction-fee", async (req,res)=>{
 
                     return res.status(200).send({
                         AppliedFeeID:payModel5.feeId,
-                        AppliedFeeValue :amt,
+                        AppliedFeeValue :Number(amt.toFixed(2)),
                         ChargeAmount : chrgamt,
                         SettlementAmount : (chrgamt-amt)
                     });
@@ -1068,7 +1202,7 @@ router.post("/compute-transaction-fee", async (req,res)=>{
 
                     return res.status(200).send({
                         AppliedFeeID:payModel1.feeId,
-                        AppliedFeeValue :amt,
+                        AppliedFeeValue :Number(amt.toFixed(2)),
                         ChargeAmount : chrgamt,
                         SettlementAmount : (chrgamt-amt)
                     });
@@ -1136,7 +1270,7 @@ router.post("/compute-transaction-fee", async (req,res)=>{
 
                     return res.status(200).send({
                         AppliedFeeID:payModel4.feeId,
-                        AppliedFeeValue :amt,
+                        AppliedFeeValue :Number(amt.toFixed(2)),
                         ChargeAmount : chrgamt,
                         SettlementAmount : (chrgamt-amt)
                     });
@@ -1203,7 +1337,7 @@ router.post("/compute-transaction-fee", async (req,res)=>{
 
                     return res.status(200).send({
                         AppliedFeeID:payModel6.feeId,
-                        AppliedFeeValue :amt,
+                        AppliedFeeValue :Number(amt.toFixed(2)),
                         ChargeAmount : chrgamt,
                         SettlementAmount : (chrgamt-amt)
                     });
@@ -1211,8 +1345,78 @@ router.post("/compute-transaction-fee", async (req,res)=>{
                 }
             }
 
+               //to check if entity type is * and locale is * and alll *
+               let payModel7 = fees.find(p=>p.feeEntity == "*" && p.feeLocale == "*" && p.entityProp == '*'  )
+               if(payModel7 != null || payModel7 != undefined)
+               {
+                   console.log(`here1`,payModel7)
+                   if(payModel7.feeType == "FLAT")
+                   {
+                       //do
+                       console.log(`here`,payModel7.feeType)
+                       let amt = parseFloat(payModel7.feeValue);
+   
+                       let chrgamt = req.body.Customer.BearsFee == true ? (parseFloat(req.body.Amount) + amt ) : (parseFloat(req.body.Amount));
+   
+                       return res.status(200).send({
+                           AppliedFeeID:payModel7.feeId,
+                           AppliedFeeValue :amt,
+                           ChargeAmount : chrgamt,
+                           SettlementAmount : (chrgamt-amt)
+                       });
+                   }
+   
+                   else if(payModel7.feeType == "FLAT_PERC")
+                   {
+                       try{
+                       console.log(`here`,payModel7.feeType)
+   
+                       let amt = parseFloat(payModel7.feeValue.split(":")[0]);
+   
+                       let amt1 = parseFloat(payModel7.feeValue.split(":")[1]);
+   
+                       let total = amt +((amt1/100)*parseFloat(req.body.Amount))
+   
+                       let chrgamt = req.body.Customer.BearsFee == true ? (parseFloat(req.body.Amount) + total ) : (parseFloat(req.body.Amount));
+   
+                       return res.status(200).send({
+                           AppliedFeeID:payModel7.feeId,
+                           AppliedFeeValue : total.toFixed(2),
+                           ChargeAmount : chrgamt,
+                           SettlementAmount : (chrgamt-total)
+                       });
+   
+                       }
+                       catch(err)
+                       {
+                           return res.status(400).send({error:err.message})
+                       }
+                       
+                   }
+   
+                   else if(payModel7.feeType === 'PERC')
+                   {
+                       console.log(`here`,payModel7.feeType)
+                       let amt = (parseFloat(payModel7.feeValue)/100)*(parseFloat(req.body.Amount));
+   
+                       let chrgamt = req.body.Customer.BearsFee == true ? (parseFloat(req.body.Amount) + amt ) : (parseFloat(req.body.Amount));
+   
+                       return res.status(200).send({
+                           AppliedFeeID:payModel7.feeId,
+                           AppliedFeeValue :Number(amt.toFixed(2)),
+                           ChargeAmount : chrgamt,
+                           SettlementAmount : (chrgamt-amt)
+                       });
+   
+                   }
+               }
+
+
             return res.status(400).send({Error:"No fee configuration matches this payment"});
         }
+
+
+        //then for wallets ************************************************************8
         if(req.body.PaymentEntity.Type == "WALLET-ID"){
 
             //get a list of fee config for credit-card and the same entity prop type //checking if entity prop is equals to brand 
@@ -1265,7 +1469,7 @@ router.post("/compute-transaction-fee", async (req,res)=>{
 
                     return res.status(200).send({
                         AppliedFeeID:payModel.feeId,
-                        AppliedFeeValue :amt,
+                        AppliedFeeValue :Number(amt.toFixed(2)),
                         ChargeAmount : chrgamt,
                         SettlementAmount : (chrgamt-amt)
                     });
@@ -1324,7 +1528,7 @@ router.post("/compute-transaction-fee", async (req,res)=>{
 
                     return res.status(200).send({
                         AppliedFeeID:payModel2.feeId,
-                        AppliedFeeValue :amt,
+                        AppliedFeeValue :Number(amt.toFixed(2)),
                         ChargeAmount : chrgamt,
                         SettlementAmount : (chrgamt-amt)
                     });
@@ -1381,7 +1585,7 @@ router.post("/compute-transaction-fee", async (req,res)=>{
 
                     return res.status(200).send({
                         AppliedFeeID:payModel5.feeId,
-                        AppliedFeeValue :amt,
+                        AppliedFeeValue :Number(amt.toFixed(2)),
                         ChargeAmount : chrgamt,
                         SettlementAmount : (chrgamt-amt)
                     });
@@ -1448,7 +1652,7 @@ router.post("/compute-transaction-fee", async (req,res)=>{
 
                     return res.status(200).send({
                         AppliedFeeID:payModel1.feeId,
-                        AppliedFeeValue :amt,
+                        AppliedFeeValue :Number(amt.toFixed(2)),
                         ChargeAmount : chrgamt,
                         SettlementAmount : (chrgamt-amt)
                     });
@@ -1516,7 +1720,7 @@ router.post("/compute-transaction-fee", async (req,res)=>{
 
                     return res.status(200).send({
                         AppliedFeeID:payModel4.feeId,
-                        AppliedFeeValue :amt,
+                        AppliedFeeValue :Number(amt.toFixed(2)),
                         ChargeAmount : chrgamt,
                         SettlementAmount : (chrgamt-amt)
                     });
@@ -1583,7 +1787,7 @@ router.post("/compute-transaction-fee", async (req,res)=>{
 
                     return res.status(200).send({
                         AppliedFeeID:payModel6.feeId,
-                        AppliedFeeValue :amt,
+                        AppliedFeeValue :Number(amt.toFixed(2)),
                         ChargeAmount : chrgamt,
                         SettlementAmount : (chrgamt-amt)
                     });
@@ -1591,8 +1795,77 @@ router.post("/compute-transaction-fee", async (req,res)=>{
                 }
             }
 
+
+               //to check if entity type is * and locale is * and alll *
+               let payModel7 = fees.find(p=>p.feeEntity == "*" && p.feeLocale == "*" && p.entityProp == '*'  )
+               if(payModel7 != null || payModel7 != undefined)
+               {
+                   console.log(`here1`,payModel7)
+                   if(payModel7.feeType == "FLAT")
+                   {
+                       //do
+                       console.log(`here`,payModel7.feeType)
+                       let amt = parseFloat(payModel7.feeValue);
+   
+                       let chrgamt = req.body.Customer.BearsFee == true ? (parseFloat(req.body.Amount) + amt ) : (parseFloat(req.body.Amount));
+   
+                       return res.status(200).send({
+                           AppliedFeeID:payModel7.feeId,
+                           AppliedFeeValue :amt,
+                           ChargeAmount : chrgamt,
+                           SettlementAmount : (chrgamt-amt)
+                       });
+                   }
+   
+                   else if(payModel7.feeType == "FLAT_PERC")
+                   {
+                       try{
+                       console.log(`here`,payModel7.feeType)
+   
+                       let amt = parseFloat(payModel7.feeValue.split(":")[0]);
+   
+                       let amt1 = parseFloat(payModel7.feeValue.split(":")[1]);
+   
+                       let total = amt +((amt1/100)*parseFloat(req.body.Amount))
+   
+                       let chrgamt = req.body.Customer.BearsFee == true ? (parseFloat(req.body.Amount) + total ) : (parseFloat(req.body.Amount));
+   
+                       return res.status(200).send({
+                           AppliedFeeID:payModel7.feeId,
+                           AppliedFeeValue : total.toFixed(2),
+                           ChargeAmount : chrgamt,
+                           SettlementAmount : (chrgamt-total)
+                       });
+   
+                       }
+                       catch(err)
+                       {
+                           return res.status(400).send({error:err.message})
+                       }
+                       
+                   }
+   
+                   else if(payModel7.feeType === 'PERC')
+                   {
+                       console.log(`here`,payModel7.feeType)
+                       let amt = (parseFloat(payModel7.feeValue)/100)*(parseFloat(req.body.Amount));
+   
+                       let chrgamt = req.body.Customer.BearsFee == true ? (parseFloat(req.body.Amount) + amt ) : (parseFloat(req.body.Amount));
+   
+                       return res.status(200).send({
+                           AppliedFeeID:payModel7.feeId,
+                           AppliedFeeValue :Number(amt.toFixed(2)),
+                           ChargeAmount : chrgamt,
+                           SettlementAmount : (chrgamt-amt)
+                       });
+   
+                   }
+               }
             return res.status(400).send({Error:"No fee configuration matches this payment"});
         }
+
+
+        // then for ussd ********************************************88
         if(req.body.PaymentEntity.Type == "USSD"){
 
             //get a list of fee config for credit-card and the same entity prop type //checking if entity prop is equals to brand 
@@ -1645,7 +1918,7 @@ router.post("/compute-transaction-fee", async (req,res)=>{
 
                     return res.status(200).send({
                         AppliedFeeID:payModel.feeId,
-                        AppliedFeeValue :amt,
+                        AppliedFeeValue :Number(amt.toFixed(2)),
                         ChargeAmount : chrgamt,
                         SettlementAmount : (chrgamt-amt)
                     });
@@ -1704,7 +1977,7 @@ router.post("/compute-transaction-fee", async (req,res)=>{
 
                     return res.status(200).send({
                         AppliedFeeID:payModel2.feeId,
-                        AppliedFeeValue :amt,
+                        AppliedFeeValue :Number(amt.toFixed(2)),
                         ChargeAmount : chrgamt,
                         SettlementAmount : (chrgamt-amt)
                     });
@@ -1761,7 +2034,7 @@ router.post("/compute-transaction-fee", async (req,res)=>{
 
                     return res.status(200).send({
                         AppliedFeeID:payModel5.feeId,
-                        AppliedFeeValue :amt,
+                        AppliedFeeValue :Number(amt.toFixed(2)),
                         ChargeAmount : chrgamt,
                         SettlementAmount : (chrgamt-amt)
                     });
@@ -1828,7 +2101,7 @@ router.post("/compute-transaction-fee", async (req,res)=>{
 
                     return res.status(200).send({
                         AppliedFeeID:payModel1.feeId,
-                        AppliedFeeValue :amt,
+                        AppliedFeeValue :Number(amt.toFixed(2)),
                         ChargeAmount : chrgamt,
                         SettlementAmount : (chrgamt-amt)
                     });
@@ -1896,7 +2169,7 @@ router.post("/compute-transaction-fee", async (req,res)=>{
 
                     return res.status(200).send({
                         AppliedFeeID:payModel4.feeId,
-                        AppliedFeeValue :amt,
+                        AppliedFeeValue :Number(amt.toFixed(2)),
                         ChargeAmount : chrgamt,
                         SettlementAmount : (chrgamt-amt)
                     });
@@ -1963,13 +2236,79 @@ router.post("/compute-transaction-fee", async (req,res)=>{
 
                     return res.status(200).send({
                         AppliedFeeID:payModel6.feeId,
-                        AppliedFeeValue :amt,
+                        AppliedFeeValue :Number(amt.toFixed(2)),
                         ChargeAmount : chrgamt,
                         SettlementAmount : (chrgamt-amt)
                     });
 
                 }
             }
+
+               //to check if entity type is * and locale is * and alll *
+               let payModel7 = fees.find(p=>p.feeEntity == "*" && p.feeLocale == "*" && p.entityProp == '*'  )
+               if(payModel7 != null || payModel7 != undefined)
+               {
+                   console.log(`here1`,payModel7)
+                   if(payModel7.feeType == "FLAT")
+                   {
+                       //do
+                       console.log(`here`,payModel7.feeType)
+                       let amt = parseFloat(payModel7.feeValue);
+   
+                       let chrgamt = req.body.Customer.BearsFee == true ? (parseFloat(req.body.Amount) + amt ) : (parseFloat(req.body.Amount));
+   
+                       return res.status(200).send({
+                           AppliedFeeID:payModel7.feeId,
+                           AppliedFeeValue :amt,
+                           ChargeAmount : chrgamt,
+                           SettlementAmount : (chrgamt-amt)
+                       });
+                   }
+   
+                   else if(payModel7.feeType == "FLAT_PERC")
+                   {
+                       try{
+                       console.log(`here`,payModel7.feeType)
+   
+                       let amt = parseFloat(payModel7.feeValue.split(":")[0]);
+   
+                       let amt1 = parseFloat(payModel7.feeValue.split(":")[1]);
+   
+                       let total = amt +((amt1/100)*parseFloat(req.body.Amount))
+   
+                       let chrgamt = req.body.Customer.BearsFee == true ? (parseFloat(req.body.Amount) + total ) : (parseFloat(req.body.Amount));
+   
+                       return res.status(200).send({
+                           AppliedFeeID:payModel7.feeId,
+                           AppliedFeeValue : total.toFixed(2),
+                           ChargeAmount : chrgamt,
+                           SettlementAmount : (chrgamt-total)
+                       });
+   
+                       }
+                       catch(err)
+                       {
+                           return res.status(400).send({error:err.message})
+                       }
+                       
+                   }
+   
+                   else if(payModel7.feeType === 'PERC')
+                   {
+                       console.log(`here`,payModel7.feeType)
+                       let amt = (parseFloat(payModel7.feeValue)/100)*(parseFloat(req.body.Amount));
+   
+                       let chrgamt = req.body.Customer.BearsFee == true ? (parseFloat(req.body.Amount) + amt ) : (parseFloat(req.body.Amount));
+   
+                       return res.status(200).send({
+                           AppliedFeeID:payModel7.feeId,
+                           AppliedFeeValue :Number(amt.toFixed(2)),
+                           ChargeAmount : chrgamt,
+                           SettlementAmount : (chrgamt-amt)
+                       });
+   
+                   }
+               }
 
             return res.status(400).send({Error:"No fee configuration matches this payment"});
         }

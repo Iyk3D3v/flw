@@ -10,6 +10,10 @@ dotenv.config();
 
 app.use(express.json());
 
+app.use(timeout('5s'))
+app.use(cors());
+app.use(haltOnTimedout)
+
 
 //for routing
 const feeRoute = require('./routes/fee-route');
@@ -20,6 +24,11 @@ app.get('/', async (req, res) => {
     res.send("Lannister Pay API, Home way")
     //const timeout = require("connect-timeout")
 })
+
+function haltOnTimedout(req,res,next){
+  if(!req.timedout) next()
+
+}
 
 //for db connection
 mongoose.connect(process.env.DB_CON, { useNewUrlParser: true }, () => {
